@@ -139,13 +139,14 @@ Terms in *italics* are defined in `docs/glossary.md`.
 
 ## Open questions
 
-- [ ] Can a widget button command Music directly from the sandboxed
-      widget extension, or must it relay through the *host app*? This
-      decides the control path in the plan, not the behaviour here.
-- [ ] How fast does the desktop widget actually refresh after a track
-      change (R-11)? Needs the first working build to measure. If it is
-      routinely slower than 5 seconds, the owner decides whether that is
-      acceptable before the spec is marked `Implemented`.
+- [x] Can a widget button command Music directly from the sandboxed
+      widget extension, or must it relay through the *host app*?
+      **Resolved 2026-11-19:** the relay works; all three controls were
+      confirmed against Music by the owner.
+- [x] How fast does the desktop widget actually refresh after a track
+      change (R-11)? **Measured 2026-11-19:** under one second across 12
+      changes (figures in `tasks.md`, task 2). Open remainder: whether
+      WidgetKit throttles reloads over a long listening day.
 - [ ] Does the *queue source* return a correct next item under shuffle,
       for local-library playlists, and for radio/Autoplay? The spike
       only covered a streamed playlist with shuffle off.
@@ -169,7 +170,7 @@ Built up during implementation; complete before `Implemented`.
 | SC-6 | R-6 | `NowPlayingCoreTests/SnapshotBuilderTests.swift::noInferenceWithoutQueue` |
 | SC-7 | R-7 | `NowPlayingCoreTests/SnapshotBuilderTests.swift::notPlaying` |
 | SC-8 | R-8 | `NowPlayingCoreTests/SnapshotBuilderTests.swift::pausedVersusPlaying` |
-| SC-9 | R-9 | |
+| SC-9 | R-9 | `NowPlayingCoreTests/HostAppPolicyTests.swift::hostAppIsAnAgent`, `…::installedCopyRegisters`, `…::developmentBuildDoesNotRegister`, `…::menuHasQuit` |
 | SC-10 | R-10 | `NowPlayingCoreTests/ArtworkURLPolicyTests.swift::approvesMusicArtwork`, `…::rejectsEverythingElse`, `…::rejectsMissing` |
 | SC-11 | R-14 | `NowPlayingCoreTests/WidgetLayoutTests.swift::overlayAboveBackground` |
 | SC-12 | R-15 | `NowPlayingCoreTests/WidgetLayoutTests.swift::scrimAlwaysPresent` |

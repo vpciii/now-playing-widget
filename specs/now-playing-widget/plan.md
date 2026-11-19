@@ -107,6 +107,14 @@ The host app also writes "not playing" when it quits.
 - *2026-11-19* — **Stale widget process.** macOS keeps the old widget
   extension process running after a rebuild; `scripts/run.sh` stops it.
 
+- *2026-11-19* — **Installed to `/Applications`.** The owner agreed to
+  install a release copy there so the login item has a stable path;
+  only that copy registers itself. `scripts/uninstall.sh` is the undo.
+- *2026-11-19* — **SC-9 is tested in the core package**, not an app
+  test target as the test strategy said: the agent flag is read from
+  `App/Info.plist`, and login item registration and the Quit command
+  are decided by `HostAppPolicy`, which the app only carries out.
+
 ## API changes
 
 None external. Internal contracts:

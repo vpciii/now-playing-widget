@@ -1,4 +1,5 @@
 import NowPlayingCore
+import ServiceManagement
 import SwiftUI
 import os
 
@@ -8,17 +9,43 @@ struct NowPlayingApp: App {
 
     var body: some Scene {
         MenuBarExtra("Now Playing", systemImage: "music.note") {
-            Button("Quit Now Playing") { NSApplication.shared.terminate(nil) }
-                .keyboardShortcut("q")
+            ForEach(HostAppPolicy.menu, id: \.rawValue) { command in
+                switch command {
+                case .quit:
+                    Button(command.title) { NSApplication.shared.terminate(nil) }
+                        .keyboardShortcut("q")
+                }
+            }
         }
     }
+}
+
+/// Start-at-login through the system's login item service.
+struct MainAppLoginItem: LoginItemRegistering {
+    var isRegistered: Bool { SMAppService.mainApp.status == .enabled }
+    func register() throws { try SMAppService.mainApp.register() }
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let coordinator = NowPlayingCoordinator()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        registerLoginItem()
         coordinator.start()
+    }
+
+    private func registerLoginItem() {
+        let registrar = MainAppLoginItem()
+        do {
+            let registered = try HostAppPolicy.registerLoginItemIfNeeded(
+                bundlePath: Bundle.main.bundlePath, registrar: registrar)
+            Log.widget.info("""
+                login item: registeredNow=\(registered, privacy: .public) \
+                enabled=\(registrar.isRegistered, privacy: .public)
+                """)
+        } catch {
+            Log.widget.error("login item registration failed: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     /// Clicking the widget outside its controls opens this app with a URL;

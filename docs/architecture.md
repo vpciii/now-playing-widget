@@ -14,6 +14,7 @@ Music.app ──notification / AppleScript──▶ Host app ──writes──�
   The *snapshot* model and file format, `SnapshotBuilder` (merges the
   *supported route* and *queue source* results), `QueueOutputParser`,
   `PlayerCommand`, `CommandDispatcher`, `TimelinePlan`, `SharedContainer`,
+  `ArtworkURLPolicy`, `HostAppPolicy`,
   and `WidgetLayout`, which decides what the widget draws. All unit
   tests live here.
 - **`App/`** — the *host app* (`local.nowplaying.app`). A background
@@ -50,14 +51,21 @@ Music.app ──notification / AppleScript──▶ Host app ──writes──�
 - **Staleness:** the widget's timeline ends with a "not playing" entry 30
   seconds after a playing song's expected end (`TimelinePlan`).
 
-## Not built yet
+## Install and startup
 
-The login item, and a working menu bar item (it does not appear; cause
-unknown). See `specs/now-playing-widget/tasks.md`.
+`scripts/install.sh` puts a release copy at `/Applications/NowPlaying.app`.
+That copy registers itself as a login item (`SMAppService.mainApp`); a
+development build in the `build` folder never does (`HostAppPolicy`).
+Only one copy should exist at a time, since both carry the same widget
+extension.
+
+The menu bar item has a Quit command. Bartender, which the owner runs,
+hides it by default: the item appeared once Bartender was quit (confirmed
+2026-11-19).
 
 ## Build
 
-`scripts/run.sh` generates the project, builds, and runs the new build.
+`scripts/run.sh` generates the project, builds, and runs a debug build.
 It also stops the previous widget extension process: macOS keeps that
 process alive across rebuilds, so without this the desktop keeps showing
 the old widget code. The `.xcodeproj` is generated from `project.yml` and
