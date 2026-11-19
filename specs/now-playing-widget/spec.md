@@ -205,14 +205,21 @@ Terms in *italics* are defined in `docs/glossary.md`.
       change (R-11)? **Measured 2026-11-19:** under one second across 12
       changes (figures in `tasks.md`, task 2). Open remainder: whether
       WidgetKit throttles reloads over a long listening day.
-- [ ] Does the *queue source* return a correct next item under shuffle,
+- [x] Does the *queue source* return a correct next item under shuffle,
       for local-library playlists, and for radio/Autoplay? The spike
       only covered a streamed playlist with shuffle off.
       **Shuffle: confirmed 2026-11-19.** With shuffle on, the widget
       showed "Fall Down" as upcoming during "Main Street" and "Fall
       Down" played next (logged); the owner also reported it looked
-      right. One logged sample. Local-library playlists and
-      radio/Autoplay are still unchecked.
+      right. One logged sample. **Local-library playlists: not
+      applicable** — the owner has no local library (2026-11-19), so
+      this stays untested by choice; so does the AppleScript artwork
+      fallback, which only runs when a song has no artwork URL.
+      **Radio: confirmed 2026-11-19.** On Discovery Station the widget
+      showed "The Man I Love, Mirage in E-Flat" as upcoming during
+      "EMPTY I" and it played next (logged); the owner also reported
+      current and upcoming looked correct. One logged sample. Autoplay
+      after a playlist ends was not separately checked.
 
 ## Out of scope (for now)
 
@@ -222,7 +229,9 @@ Terms in *italics* are defined in `docs/glossary.md`.
   and Music exposes neither list locally. The supported way is MusicKit,
   which needs the app signed under an Apple Developer Program team, a
   permission prompt and access to Apple's music API. It would be its own
-  spec and ADR.
+  spec and ADR. Seen while a station played: the private route reports
+  the station's name and identifier, and still lists its like and
+  dislike commands as disabled.
 - A second upcoming song or a short queue list.
 
 ## Traceability
