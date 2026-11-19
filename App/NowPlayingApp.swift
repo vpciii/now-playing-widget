@@ -1,6 +1,5 @@
 import NowPlayingCore
 import SwiftUI
-import WidgetKit
 import os
 
 @main
@@ -16,28 +15,23 @@ struct NowPlayingApp: App {
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private let relay = CommandRelay()
+    private let coordinator = NowPlayingCoordinator()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        relay.start { command in
-            Log.commands.info("relayed command: \(command.rawValue, privacy: .public)")
-        }
-        publish(.notPlaying(at: Date()))
+        coordinator.start()
+    }
+
+    /// Clicking the widget outside its controls opens this app with a URL;
+    /// bring Music forward (spec R-13).
+    func application(_ application: NSApplication, open urls: [URL]) {
+        guard let music = NSWorkspace.shared.urlForApplication(withBundleIdentifier: AppleScriptMusic.musicBundleID)
+        else { return }
+        NSWorkspace.shared.openApplication(at: music, configuration: NSWorkspace.OpenConfiguration())
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         // A quit host app must not leave a song looking live (spec goal 4).
-        publish(.notPlaying(at: Date()))
-    }
-
-    private func publish(_ snapshot: Snapshot) {
-        do {
-            try SharedContainer.write(snapshot)
-            WidgetCenter.shared.reloadTimelines(ofKind: WidgetSupport.widgetKind)
-            Log.widget.info("published snapshot: \(snapshot.state.rawValue, privacy: .public)")
-        } catch {
-            Log.widget.error("could not write snapshot: \(error.localizedDescription, privacy: .public)")
-        }
+        coordinator.stop()
     }
 }
 

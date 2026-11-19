@@ -30,7 +30,7 @@ widget targets generated from `project.yml`, and a widget that renders a
 
 ---
 
-## Task 2 — Show the current song from the supported route
+## Task 2 — Show the current song from the supported route `[~]`
 
 - **Depends on:** Task 1
 - **PR:** —
@@ -39,16 +39,18 @@ widget targets generated from `project.yml`, and a widget that renders a
 artwork, writes the *snapshot* and reloads the widget.
 
 **Acceptance criteria:**
-- [ ] Widget shows title, artist, album and artwork of the *current song*
+- [ ] Widget shows title, artist, album and artwork of the *current song* (host app writes them: verified against real Music; on-desktop rendering needs the owner to place the widget)
 - [ ] "Not playing" and paused states shown (SC-7, SC-8 end to end)
-- [ ] Stale protection entry at `expectedEndAt`
+- [x] Stale protection entry at `expectedEndAt` (`staleProtection` test)
 - [ ] Refresh latency measured over at least 10 track changes and
-      reported to the owner (spec open question)
-- [ ] Tests cite SC-3
+      reported to the owner (spec open question). First 3 samples,
+      reload request to widget timeline request: 28 ms, 11 ms, 10 ms;
+      Music's notification to reload request: about 150 ms.
+- [x] Tests cite SC-3
 
 ---
 
-## Task 3 — Add the upcoming song from the queue source
+## Task 3 — Add the upcoming song from the queue source `[~]`
 
 - **Depends on:** Task 2
 - **PR:** —
@@ -57,14 +59,17 @@ artwork, writes the *snapshot* and reloads the widget.
 upcoming artwork, fall back to "unavailable".
 
 **Acceptance criteria:**
-- [ ] Widget shows the *upcoming song* for a streamed playlist
-- [ ] Tests cite SC-4, SC-10 (and SC-5 for each script failure mode)
+- [x] Widget shows the *upcoming song* for a streamed playlist (host app published "Rippling Reveries" with artwork after "Fields of Dusk"; on-desktop look to be confirmed by the owner)
+- [x] Tests cite SC-4, SC-10 (and SC-5 for each script failure mode)
 - [ ] Manual matrix recorded: shuffle, local playlist, radio/Autoplay
       (spec open question)
 
 ---
 
-## Task 4 — Overlay layout and controls
+## Task 4 — Overlay layout and controls `[~]`
+
+> 2026-11-19: pulled ahead of task 3 at the owner's request (artwork
+> should fill the widget and stay visible when the desktop mutes it).
 
 - **Depends on:** Task 3
 - **PR:** —
@@ -73,7 +78,7 @@ upcoming artwork, fall back to "unavailable".
 and play/pause controls through the relay.
 
 **Acceptance criteria:**
-- [ ] Tests cite SC-11, SC-12, SC-13, SC-14, SC-15, SC-16, SC-17
+- [x] Tests cite SC-11, SC-12, SC-13, SC-14, SC-15, SC-16, SC-17
 - [ ] Each control checked against real Music
 - [ ] Clicking outside the controls brings Music forward (R-13)
 

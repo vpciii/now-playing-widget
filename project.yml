@@ -2,7 +2,7 @@ name: NowPlaying
 options:
   bundleIdPrefix: local.nowplaying
   deploymentTarget:
-    macOS: "14.0"
+    macOS: "15.0"
   createIntermediateGroups: true
 settings:
   base:
@@ -21,6 +21,9 @@ targets:
   NowPlaying:
     type: application
     platform: macOS
+    # App/Resources/queue-source.swiftscript is copied as a resource and run
+    # by the swift interpreter at runtime, not compiled (ADR-0001). It is not
+    # named .swift because Xcode will not copy a .swift file as a resource.
     sources: [App]
     dependencies:
       - package: NowPlayingCore

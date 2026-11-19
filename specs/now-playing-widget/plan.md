@@ -96,6 +96,17 @@ The host app also writes "not playing" when it quits.
   signing identity) no longer blocks anything. Undo: switch
   `SharedContainer` back to an App Group once a team exists.
 
+- *2026-11-19* — **Queue script is piped, not passed by path.** Xcode
+  will not copy a `.swift` file as a bundle resource, so the script
+  ships as `queue-source.swiftscript` and the host app feeds it to
+  `/usr/bin/swift -` on standard input.
+- *2026-11-19* — **Current artwork falls back to the queue source's
+  URL.** Streamed songs often have no artwork over AppleScript at the
+  moment the track changes. The queue's first item is the same song and
+  carries an artwork URL, fetched under the same allowlist (R-10).
+- *2026-11-19* — **Stale widget process.** macOS keeps the old widget
+  extension process running after a rebuild; `scripts/run.sh` stops it.
+
 ## API changes
 
 None external. Internal contracts:

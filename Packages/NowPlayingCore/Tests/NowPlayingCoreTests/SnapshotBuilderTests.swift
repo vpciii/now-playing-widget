@@ -118,3 +118,36 @@ func commandNames() {
     }
     #expect(PlayerCommand(notificationName: "com.apple.Music.playerInfo") == nil)
 }
+
+@Test("SC-3: artwork is carried when Music provides it and absent (placeholder) when it does not")
+func artworkOrPlaceholder() {
+    let with = SnapshotBuilder.build(music: reading(), queue: goodQueue, now: now,
+                                     currentArtworkFile: ArtworkFile.current)
+    let without = SnapshotBuilder.build(music: reading(), queue: goodQueue, now: now, currentArtworkFile: nil)
+    #expect(with.current?.artworkFile == ArtworkFile.current)
+    #expect(without.current?.artworkFile == nil)
+    #expect(without.current?.title == "Frozen Tears")
+}
+
+@Test("A playing song turns into not playing once it is well past its expected end")
+func staleProtection() {
+    let playing = SnapshotBuilder.build(music: reading(.playing), queue: goodQueue, now: now)
+    let end = now.addingTimeInterval(150)
+
+    let live = TimelinePlan.entries(for: playing, now: now)
+    #expect(live.count == 2)
+    #expect(live[0].snapshot == playing)
+    #expect(live[1].date == end.addingTimeInterval(TimelinePlan.staleMargin))
+    #expect(live[1].snapshot.state == .notPlaying)
+    #expect(live[1].snapshot.current == nil)
+
+    let late = TimelinePlan.entries(for: playing, now: end.addingTimeInterval(TimelinePlan.staleMargin + 1))
+    #expect(late.map(\.snapshot.state) == [.notPlaying])
+}
+
+@Test("Paused and missing snapshots get a single entry")
+func timelineWithoutExpectedEnd() {
+    let paused = SnapshotBuilder.build(music: reading(.paused), queue: goodQueue, now: now)
+    #expect(TimelinePlan.entries(for: paused, now: now).map(\.snapshot) == [paused])
+    #expect(TimelinePlan.entries(for: nil, now: now).map(\.snapshot.state) == [.notPlaying])
+}

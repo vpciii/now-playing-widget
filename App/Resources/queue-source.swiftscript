@@ -1,0 +1,80 @@
+// The queue source (ADR-0001). Not compiled into the app: the host app pipes
+// this file into Xcode's `swift` interpreter, because private MediaRemote
+// only answers Apple-signed callers.
+//
+// Output contract (plan, "API changes"): exit 0 and print
+//   {"items":[{"title","artist","album","artworkURL"}...]}
+// with item 0 the current song. Any other outcome is a non-zero exit.
+// Takes no input.
+import Foundation
+import ObjectiveC
+
+func fail(_ message: String, code: Int32) -> Never {
+    FileHandle.standardError.write(Data((message + "\n").utf8))
+    exit(code)
+}
+
+guard dlopen("/System/Library/PrivateFrameworks/MediaRemote.framework/MediaRemote", RTLD_NOW) != nil else {
+    fail("MediaRemote not found", code: 10)
+}
+guard let requestClass = NSClassFromString("MRPlaybackQueueRequest"),
+      let originClass = NSClassFromString("MROrigin"),
+      let configurationClass = NSClassFromString("MRNowPlayingControllerConfiguration") as? NSObject.Type,
+      let controllerClass = NSClassFromString("MRNowPlayingController") as? NSObject.Type,
+      let makeRequestMethod = class_getClassMethod(requestClass, NSSelectorFromString("defaultPlaybackQueueRequestWithRange:"))
+else {
+    fail("MediaRemote classes changed", code: 11)
+}
+
+// The current song plus the next one.
+typealias MakeRequest = @convention(c) (AnyClass, Selector, NSRange) -> AnyObject?
+let makeRequest = unsafeBitCast(method_getImplementation(makeRequestMethod), to: MakeRequest.self)
+guard let request = makeRequest(requestClass, NSSelectorFromString("defaultPlaybackQueueRequestWithRange:"),
+                                NSRange(location: 0, length: 2)),
+      let origin = (originClass as AnyObject).perform(NSSelectorFromString("localOrigin"))?.takeUnretainedValue(),
+      let configuration = (configurationClass.perform(NSSelectorFromString("alloc"))?.takeUnretainedValue() as? NSObject)?
+          .perform(NSSelectorFromString("initWithOrigin:"), with: origin)?.takeUnretainedValue() as? NSObject
+else {
+    fail("could not build the queue request", code: 12)
+}
+configuration.setValue(request, forKey: "playbackQueueRequest")
+configuration.setValue(true, forKey: "requestPlaybackQueue")
+configuration.setValue(true, forKey: "singleShot")
+
+guard let controller = (controllerClass.perform(NSSelectorFromString("alloc"))?.takeUnretainedValue() as? NSObject)?
+    .perform(NSSelectorFromString("initWithConfiguration:"), with: configuration)?.takeUnretainedValue() as? NSObject
+else {
+    fail("could not build the controller", code: 13)
+}
+
+let completion: @convention(block) (AnyObject?, AnyObject?) -> Void = { response, error in
+    if let error { fail("MediaRemote error: \(error)", code: 20) }
+    guard let queue = (response as? NSObject)?.value(forKey: "playbackQueue") as? NSObject,
+          let contentItems = queue.value(forKey: "contentItems") as? [NSObject] else {
+        fail("no playback queue", code: 21)
+    }
+    let items: [[String: String]] = contentItems.map { item in
+        let metadata = item.value(forKey: "metadata") as? NSObject
+        func text(_ key: String) -> String? {
+            guard let value = metadata?.value(forKey: key) else { return nil }
+            if let url = value as? URL { return url.absoluteString }
+            return value as? String
+        }
+        var entry = [
+            "title": text("title") ?? "",
+            "artist": text("trackArtistName") ?? "",
+            "album": text("albumName") ?? "",
+        ]
+        if let artwork = text("artworkURL") ?? text("artworkIdentifier") { entry["artworkURL"] = artwork }
+        return entry
+    }
+    guard let data = try? JSONSerialization.data(withJSONObject: ["items": items], options: [.sortedKeys]) else {
+        fail("could not encode", code: 22)
+    }
+    FileHandle.standardOutput.write(data)
+    exit(0)
+}
+controller.perform(NSSelectorFromString("performRequestWithCompletion:"), with: completion)
+
+DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { fail("no answer from MediaRemote", code: 30) }
+RunLoop.main.run()

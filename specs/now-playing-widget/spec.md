@@ -163,18 +163,18 @@ Built up during implementation; complete before `Implemented`.
 |---|---|---|
 | SC-1 | R-1 | `NowPlayingCoreTests/SnapshotBuilderTests.swift::supportedFamilies` |
 | SC-2 | R-2 | `NowPlayingCoreTests/SnapshotBuilderTests.swift::currentSongFields` |
-| SC-3 | R-3 | |
+| SC-3 | R-3 | `NowPlayingCoreTests/SnapshotBuilderTests.swift::artworkOrPlaceholder` |
 | SC-4 | R-4 | `NowPlayingCoreTests/SnapshotBuilderTests.swift::upcomingFromQueue` |
 | SC-5 | R-5 | `NowPlayingCoreTests/SnapshotBuilderTests.swift::queueFailureFallsBack`, `…::queueOutOfStepWithCurrentSong` |
 | SC-6 | R-6 | `NowPlayingCoreTests/SnapshotBuilderTests.swift::noInferenceWithoutQueue` |
 | SC-7 | R-7 | `NowPlayingCoreTests/SnapshotBuilderTests.swift::notPlaying` |
 | SC-8 | R-8 | `NowPlayingCoreTests/SnapshotBuilderTests.swift::pausedVersusPlaying` |
 | SC-9 | R-9 | |
-| SC-10 | R-10 | |
-| SC-11 | R-14 | |
-| SC-12 | R-15 | |
-| SC-13 | R-16 | |
-| SC-14 | R-17 | |
-| SC-15 | R-18 | |
-| SC-16 | R-19 | |
-| SC-17 | R-20 | |
+| SC-10 | R-10 | `NowPlayingCoreTests/ArtworkURLPolicyTests.swift::approvesMusicArtwork`, `…::rejectsEverythingElse`, `…::rejectsMissing` |
+| SC-11 | R-14 | `NowPlayingCoreTests/WidgetLayoutTests.swift::overlayAboveBackground` |
+| SC-12 | R-15 | `NowPlayingCoreTests/WidgetLayoutTests.swift::scrimAlwaysPresent` |
+| SC-13 | R-16 | `NowPlayingCoreTests/WidgetLayoutTests.swift::oneCommandPerPress` |
+| SC-14 | R-17 | `NowPlayingCoreTests/WidgetLayoutTests.swift::oneCommandPerPress` |
+| SC-15 | R-18 | `NowPlayingCoreTests/WidgetLayoutTests.swift::controlsIndependentOfQueueSource` |
+| SC-16 | R-19 | `NowPlayingCoreTests/WidgetLayoutTests.swift::notPlayingHasNoControls` |
+| SC-17 | R-20 | `NowPlayingCoreTests/WidgetLayoutTests.swift::oneCommandPerPress`, `…::playPauseIcon` |
