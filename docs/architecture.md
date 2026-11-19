@@ -74,6 +74,11 @@ The menu bar item has a Quit command. Bartender, which the owner runs,
 hides it by default: the item appeared once Bartender was quit (confirmed
 2026-11-19).
 
+## Repository
+
+Public on GitHub at `vpciii/now-playing-widget`, MIT licensed (ADR-0002).
+Commits use the owner's GitHub noreply address.
+
 ## Build
 
 `scripts/run.sh` generates the project, builds, and runs a debug build.
