@@ -51,7 +51,18 @@ final class NowPlayingCoordinator {
             reading = nil
         }
         guard let reading, reading.state != .stopped else {
-            publish(SnapshotBuilder.build(music: reading, queue: .failed(reason: "not playing"), now: now))
+            let notPlaying = SnapshotBuilder.build(music: reading, queue: .failed(reason: "not playing"), now: now)
+            switch NotPlayingTiming.decide(for: reading) {
+            case .publishNow:
+                publish(notPlaying)
+            case .publishIfStillCurrent(let delay):
+                // Music reports "stopped" for a moment while switching to a
+                // different playlist; the next notification supersedes this.
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                    guard let self, self.generation == current else { return }
+                    self.publish(notPlaying)
+                }
+            }
             return
         }
 

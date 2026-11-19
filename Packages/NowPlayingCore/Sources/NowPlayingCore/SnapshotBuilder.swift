@@ -95,3 +95,23 @@ public enum SnapshotBuilder {
         return Song(title: next.title, artist: next.artist, album: next.album, artworkFile: artworkFile)
     }
 }
+
+/// When to show "not playing".
+public enum NotPlayingTiming: Equatable, Sendable {
+    case publishNow
+    /// Publish after `delay` unless a newer reading has arrived by then.
+    case publishIfStillCurrent(after: TimeInterval)
+
+    /// How long a "stopped" reading must stand before the widget shows it.
+    public static let settleDelay: TimeInterval = 1.0
+
+    /// Music reports "stopped" for a fraction of a second while it switches to
+    /// a different playlist, then "playing" again. Showing that would flash
+    /// "Not playing" on the widget and spend reloads, so a stopped reading
+    /// waits to see whether it lasts. Music not running at all is not
+    /// transient and is shown at once.
+    public static func decide(for reading: MusicReading?) -> NotPlayingTiming {
+        guard let reading else { return .publishNow }
+        return reading.state == .stopped ? .publishIfStillCurrent(after: settleDelay) : .publishNow
+    }
+}

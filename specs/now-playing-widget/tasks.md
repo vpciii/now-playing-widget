@@ -40,7 +40,7 @@ artwork, writes the *snapshot* and reloads the widget.
 
 **Acceptance criteria:**
 - [x] Widget shows title, artist, album and artwork of the *current song* (owner confirmed on the desktop, 2026-11-19)
-- [ ] "Not playing" and paused states shown (SC-7, SC-8 end to end): paused published and reloaded; "not playing" not yet seen on the desktop
+- [ ] "Not playing" and paused states shown (SC-7, SC-8 end to end): paused published and reloaded; "not playing" published when Music stopped (2026-11-19), not yet confirmed by the owner on the desktop
 - [x] Stale protection entry at `expectedEndAt` (`staleProtection` test)
 - [x] Refresh latency measured and reported to the owner (spec open
       question). 2026-11-19, 12 changes on the full build (queue lookup
@@ -65,7 +65,8 @@ upcoming artwork, fall back to "unavailable".
 - [x] Widget shows the *upcoming song* for a streamed playlist (host app published "Rippling Reveries" with artwork after "Fields of Dusk"; on-desktop look to be confirmed by the owner)
 - [x] Tests cite SC-4, SC-10 (and SC-5 for each script failure mode)
 - [ ] Manual matrix recorded: shuffle, local playlist, radio/Autoplay
-      (spec open question)
+      (spec open question). Shuffle confirmed 2026-11-19; local playlist
+      and radio/Autoplay still open.
 
 ---
 

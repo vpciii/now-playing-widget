@@ -163,6 +163,11 @@ Terms in *italics* are defined in `docs/glossary.md`.
 - [ ] Does the *queue source* return a correct next item under shuffle,
       for local-library playlists, and for radio/Autoplay? The spike
       only covered a streamed playlist with shuffle off.
+      **Shuffle: confirmed 2026-11-19.** With shuffle on, the widget
+      showed "Fall Down" as upcoming during "Main Street" and "Fall
+      Down" played next (logged); the owner also reported it looked
+      right. One logged sample. Local-library playlists and
+      radio/Autoplay are still unchecked.
 
 ## Out of scope (for now)
 

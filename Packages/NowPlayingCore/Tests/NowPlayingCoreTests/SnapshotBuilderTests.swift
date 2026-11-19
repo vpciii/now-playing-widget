@@ -151,3 +151,12 @@ func timelineWithoutExpectedEnd() {
     #expect(TimelinePlan.entries(for: paused, now: now).map(\.snapshot) == [paused])
     #expect(TimelinePlan.entries(for: nil, now: now).map(\.snapshot.state) == [.notPlaying])
 }
+
+@Test("Regression: a stopped reading waits before showing not playing; Music not running does not")
+func stoppedReadingSettles() {
+    // 2026-11-19: starting a different playlist logged three "notPlaying"
+    // publishes within 100 ms before the new song, flashing the widget.
+    #expect(NotPlayingTiming.decide(for: reading(.stopped)) == .publishIfStillCurrent(after: NotPlayingTiming.settleDelay))
+    #expect(NotPlayingTiming.decide(for: nil) == .publishNow)
+    #expect(NotPlayingTiming.settleDelay >= 0.5)
+}

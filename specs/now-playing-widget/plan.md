@@ -132,6 +132,13 @@ The host app also writes "not playing" when it quits.
   read a second time 2.5 s later. Regression test:
   `ArtworkURLPolicyTests::currentArtworkPrefersQueueURL`.
 
+- *2026-11-19* — **A "stopped" reading settles for one second before it
+  is shown.** Starting a different playlist made Music report "stopped"
+  three times within 100 ms before the new song, so the widget flashed
+  "Not playing" and spent three reloads. Music not running is still
+  shown at once. Regression test:
+  `SnapshotBuilderTests::stoppedReadingSettles`.
+
 ## API changes
 
 None external. Internal contracts:
