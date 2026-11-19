@@ -1,6 +1,6 @@
 # Plan: Now Playing desktop widget
 
-- **Status:** Approved
+- **Status:** Implemented
 - **Date:** 2026-11-19
 - **Author:** Claude (draft); approved by the owner 2026-11-19
 - **Spec:** ./spec.md

@@ -1,8 +1,8 @@
 # Spec: Now Playing desktop widget
 
-- **Status:** Approved
+- **Status:** Implemented
 - **Date:** 2026-11-19
-- **Author:** Claude (draft); approved by the owner 2026-11-19
+- **Author:** Claude (draft); approved by the owner 2026-11-19; implemented 2026-11-19
 - **Related ADRs:** ADR-0001
 
 > This spec is editable while `Draft` / `Under review` / `Approved`.

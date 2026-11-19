@@ -1,6 +1,6 @@
 # Tasks: Now Playing desktop widget
 
-- **Status:** In progress
+- **Status:** Done
 - **Spec:** ./spec.md
 - **Plan:** ./plan.md
 
@@ -30,7 +30,7 @@ widget targets generated from `project.yml`, and a widget that renders a
 
 ---
 
-## Task 2 — Show the current song from the supported route `[~]`
+## Task 2 — Show the current song from the supported route `[x]`
 
 - **Depends on:** Task 1
 - **PR:** —
@@ -53,7 +53,7 @@ artwork, writes the *snapshot* and reloads the widget.
 
 ---
 
-## Task 3 — Add the upcoming song from the queue source `[~]`
+## Task 3 — Add the upcoming song from the queue source `[x]`
 
 - **Depends on:** Task 2
 - **PR:** —
@@ -71,7 +71,7 @@ upcoming artwork, fall back to "unavailable".
 
 ---
 
-## Task 4 — Overlay layout and controls `[~]`
+## Task 4 — Overlay layout and controls `[x]`
 
 > 2026-11-19: pulled ahead of task 3 at the owner's request (artwork
 > should fill the widget and stay visible when the desktop mutes it).
@@ -89,7 +89,7 @@ and play/pause controls through the relay.
 
 ---
 
-## Task 5 — Login item, menu bar item, and close-out `[~]`
+## Task 5 — Login item, menu bar item, and close-out `[x]`
 
 - **Depends on:** Task 4
 - **PR:** —
@@ -97,10 +97,10 @@ and play/pause controls through the relay.
 **What:** Start at login, Quit from the menu bar, logging, README.
 
 **Acceptance criteria:**
-- [x] Tests cite SC-9 (installed copy logged `login item: registeredNow=true enabled=true`, 2026-11-19; not yet tested across a real logout and login)
+- [x] Tests cite SC-9 (installed copy logged `login item: registeredNow=true enabled=true`; after a reboot on 2026-11-19 the app was running from `/Applications` without being launched, and the owner saw the widget update when Music started)
 - [x] `scripts/check-traceability.sh` passes with every SC covered
 - [x] README with build, install and undo steps
-- [ ] Spec open questions resolved; spec marked `Implemented` (all spec open questions resolved 2026-11-19; not yet marked `Implemented`: start at login has not been seen across a real logout)
+- [x] Spec open questions resolved; spec marked `Implemented` (2026-11-19)
 
 ---
 
@@ -121,7 +121,7 @@ in full; clicking again or a track change closes it (R-21, added
 
 ---
 
-## Task 7 — Like control `[~]`
+## Task 7 — Like control `[x]`
 
 - **Depends on:** Task 4
 - **PR:** —
@@ -141,3 +141,17 @@ with it was withdrawn the same day (R-23, R-24).
       Music reports its own dislike command as disabled. Removed at the
       owner's decision, 2026-11-19.
 - [ ] Owner confirms the like button on the desktop
+
+---
+
+## Not observed by the owner at close-out
+
+Left unticked above on purpose. Each is covered by a test or a logged
+run, but nobody has watched it on the desktop:
+
+- The "Not playing" state (task 2).
+- Clicking the artwork to bring Music forward, R-13, a SHOULD (task 4).
+- The like button on the desktop (task 7); verified by a simulated press.
+- The "Not playing" flicker fix when switching playlists.
+- Autoplay after a playlist ends, and WidgetKit throttling over a long
+  listening day.
