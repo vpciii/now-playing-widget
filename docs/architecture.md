@@ -44,8 +44,13 @@ Music.app ──notification / AppleScript──▶ Host app ──writes──�
   widget reads it through a read-only sandbox exception. It is not an App
   Group, because that entitlement needs a provisioning profile.
 - **Commands:** the widget posts a distributed notification
-  `local.nowplaying.command.<next|back|playpause>` with no payload; the
-  host app observes it.
+  `local.nowplaying.command.<name>` with no payload, one name per
+  `PlayerCommand` (playback: `next`, `back`, `playpause`; rating: `like`,
+  `removeLike`); the host app observes it. Music announces nothing when
+  a *rating* changes and reports a new like only about 2.5 s after it is
+  set, so after a like command the host app reads Music again twice
+  (0.3 s and 3.5 s) and publishes what it reports. There is no dislike:
+  Music discards it for streamed songs.
 - **Network:** one outbound use, an HTTPS GET of artwork from
   `*.mzstatic.com` (Apple's image CDN), enforced by `ArtworkURLPolicy`
   including on redirects.

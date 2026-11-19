@@ -6,6 +6,12 @@ public enum PlayerState: String, Codable, Sendable {
     case notPlaying
 }
 
+/// Whether the current song is liked (glossary: rating).
+public enum Rating: String, Codable, Sendable {
+    case none
+    case liked
+}
+
 /// A song as the widget shows it. `artworkFile` is a file name inside the
 /// shared container, or nil when there is no artwork.
 public struct Song: Codable, Equatable, Sendable {
@@ -32,13 +38,30 @@ public struct Snapshot: Codable, Equatable, Sendable {
     public var updatedAt: Date
     /// When the current song is expected to finish, if it is playing.
     public var expectedEndAt: Date?
+    /// The current song's rating as Music last reported it.
+    public var rating: Rating
 
-    public init(state: PlayerState, current: Song?, upcoming: Song?, updatedAt: Date, expectedEndAt: Date?) {
+    public init(state: PlayerState, current: Song?, upcoming: Song?, updatedAt: Date, expectedEndAt: Date?,
+                rating: Rating = .none) {
         self.state = state
         self.current = current
         self.upcoming = upcoming
         self.updatedAt = updatedAt
         self.expectedEndAt = expectedEndAt
+        self.rating = rating
+    }
+
+    /// Snapshot files written before ratings existed have no `rating` key, and
+    /// one written while a dislike control existed may hold a value that is no
+    /// longer known. Both read as no rating.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        state = try container.decode(PlayerState.self, forKey: .state)
+        current = try container.decodeIfPresent(Song.self, forKey: .current)
+        upcoming = try container.decodeIfPresent(Song.self, forKey: .upcoming)
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        expectedEndAt = try container.decodeIfPresent(Date.self, forKey: .expectedEndAt)
+        rating = (try? container.decodeIfPresent(Rating.self, forKey: .rating)) ?? .none
     }
 
     public static func notPlaying(at date: Date) -> Snapshot {

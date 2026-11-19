@@ -8,7 +8,7 @@ struct NowPlayingApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
 
     var body: some Scene {
-        MenuBarExtra("Now Playing", systemImage: "music.note") {
+        MenuBarExtra {
             ForEach(HostAppPolicy.menu, id: \.rawValue) { command in
                 switch command {
                 case .quit:
@@ -16,7 +16,46 @@ struct NowPlayingApp: App {
                         .keyboardShortcut("q")
                 }
             }
+        } label: {
+            Image(nsImage: MenuBarIcon.image)
+                .accessibilityLabel("Now Playing")
         }
+    }
+}
+
+/// The menu bar icon: a pair of beamed notes. There is no two-note system
+/// symbol, so it is drawn from the "♫" character as a template image, which
+/// the menu bar tints for light and dark like any other icon.
+enum MenuBarIcon {
+    /// Menu bar icons are about 18 points square; the notes fill most of it.
+    static let side: CGFloat = 18
+    static let inkHeight: CGFloat = 14
+
+    static let image: NSImage = {
+        let image = NSImage(size: NSSize(width: side, height: side), flipped: false) { rect in
+            draw(in: rect)
+            return true
+        }
+        image.isTemplate = true
+        return image
+    }()
+
+    /// Draws the notes centred in `rect`, sized from the glyph's own outline
+    /// so nothing depends on the font's line metrics.
+    static func draw(in rect: CGRect) {
+        guard let context = NSGraphicsContext.current?.cgContext else { return }
+        func line(fontSize: CGFloat) -> CTLine {
+            let font = NSFont.systemFont(ofSize: fontSize, weight: .medium)
+            return CTLineCreateWithAttributedString(NSAttributedString(
+                string: "♫", attributes: [.font: font, .foregroundColor: NSColor.black]))
+        }
+        let reference = CTLineGetBoundsWithOptions(line(fontSize: 100), .useGlyphPathBounds)
+        guard reference.height > 0 else { return }
+        let wanted = inkHeight * rect.height / side
+        let fitted = line(fontSize: 100 * wanted / reference.height)
+        let ink = CTLineGetBoundsWithOptions(fitted, .useGlyphPathBounds)
+        context.textPosition = CGPoint(x: rect.midX - ink.midX, y: rect.midY - ink.midY)
+        CTLineDraw(fitted, context)
     }
 }
 

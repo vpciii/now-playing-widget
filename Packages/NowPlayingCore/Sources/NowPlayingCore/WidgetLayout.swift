@@ -24,6 +24,9 @@ public struct WidgetLayout: Equatable, Sendable {
         /// The darkening layer under the text and controls (spec R-15).
         public var showsScrim: Bool
         public var controls: [Control]
+        /// The like control: the command for its next press, and a filled icon
+        /// when Music reports the song as liked (spec R-22, R-25).
+        public var ratingControls: [Control]
         /// Present when the details view is open (spec R-21).
         public var details: Details?
     }
@@ -76,6 +79,11 @@ public struct WidgetLayout: Equatable, Sendable {
                 // The icon shows what a press will do.
                 Control(command: .playpause, systemImage: snapshot.state == .playing ? "pause.fill" : "play.fill"),
                 Control(command: .next, systemImage: "forward.fill"),
+            ],
+            ratingControls: [
+                snapshot.rating == .liked
+                    ? Control(command: .removeLike, systemImage: "hand.thumbsup.fill")
+                    : Control(command: .like, systemImage: "hand.thumbsup"),
             ],
             details: detailsExpanded
                 ? Details(

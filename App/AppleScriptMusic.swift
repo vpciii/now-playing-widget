@@ -24,7 +24,11 @@ struct AppleScriptMusic: MusicCommanding {
                 if s is "stopped" then return {s}
                 try
                     set t to current track
-                    return {s, name of t, artist of t, album of t, duration of t, player position}
+                    set fav to false
+                    try
+                        set fav to favorited of t
+                    end try
+                    return {s, name of t, artist of t, album of t, duration of t, player position, fav}
                 on error
                     return {"stopped"}
                 end try
@@ -42,7 +46,8 @@ struct AppleScriptMusic: MusicCommanding {
             artist: result.atIndex(3)?.stringValue ?? "",
             album: result.atIndex(4)?.stringValue ?? "",
             duration: result.atIndex(5)?.doubleValue,
-            position: result.atIndex(6)?.doubleValue
+            position: result.atIndex(6)?.doubleValue,
+            rating: (result.atIndex(7)?.booleanValue ?? false) ? .liked : .none
         )
     }
 
@@ -64,7 +69,7 @@ struct AppleScriptMusic: MusicCommanding {
 
     func send(_ command: PlayerCommand) throws {
         guard isMusicRunning else { return }
-        _ = try run("tell application \"Music\" to \(command.appleScriptCommand)")
+        _ = try run("tell application \"Music\"\n\(command.appleScriptCommand)\nend tell")
     }
 
     private func run(_ source: String) throws -> NSAppleEventDescriptor {

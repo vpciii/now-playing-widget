@@ -117,3 +117,26 @@ in full; clicking again or a track change closes it (R-21, added
 - [x] Installed build runs with no widget errors logged
 - [ ] Owner confirms on the desktop: opens on click, closes on click and
       on track change, long titles are not cut off
+
+---
+
+## Task 7 — Like control `[~]`
+
+- **Depends on:** Task 4
+- **PR:** —
+
+**What:** A like button for the *current song*, showing the *rating*
+Music reports (R-22, R-25, added 2026-11-19). The dislike button built
+with it was withdrawn the same day (R-23, R-24).
+
+**Acceptance criteria:**
+- [x] Tests cite SC-19, SC-22 (SC-20 and SC-21 withdrawn)
+- [x] Installed build reads the rating (`rating=none` logged) with no
+      widget errors
+- [x] Like and remove like against real Music (2026-11-19: a simulated
+      press published `rating=liked` 4 s later; remove like published
+      `rating=none` within 1 s; the song was restored afterwards)
+- [x] Dislike: did not work for streamed songs over AppleScript, and
+      Music reports its own dislike command as disabled. Removed at the
+      owner's decision, 2026-11-19.
+- [ ] Owner confirms the like button on the desktop

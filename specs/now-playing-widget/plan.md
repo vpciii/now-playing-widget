@@ -139,6 +139,23 @@ The host app also writes "not playing" when it quits.
   shown at once. Regression test:
   `SnapshotBuilderTests::stoppedReadingSettles`.
 
+- *2026-11-19* — **Like is two commands, not a toggle.** The widget
+  sends the state it wants (`like` or `removeLike`), chosen from the
+  *rating* it is showing, so a press never does the opposite of what the
+  icon implied. The *rating* is read with the *current song* over
+  AppleScript (`favorited`) and added to the *snapshot*.
+- *2026-11-19* — **Dislike was built and removed.** `set disliked` over
+  AppleScript returned no error but was never reported back for a
+  streamed song, and MediaRemote lists `DislikeTrack` as disabled (and
+  as station feedback, "Play Less Like This", not Suggest Less). The
+  owner chose to remove the control rather than keep a dead one.
+
+- *2026-11-19* — **Ratings are read back twice, 0.3 s and 3.5 s after
+  the command.** Found on the desktop: likes did nothing visible,
+  because Music reports a new `favorited` value only about 2.5 s after
+  it is set and the single immediate reading still said "none".
+  Regression test: `RatingTests::ratingIsReadBackLate`.
+
 ## API changes
 
 None external. Internal contracts:

@@ -33,7 +33,7 @@ starts it, and registers it to start at login. Then:
 2. Right-click the desktop, choose Edit Widgets, search for "Now Playing"
    and add it.
 
-The app has no window or Dock icon. Its menu bar item (a music note) has
+The app has no window or Dock icon. Its menu bar item (two beamed notes) has
 a Quit command; a menu bar manager such as Bartender may hide the item.
 
 ## Uninstall

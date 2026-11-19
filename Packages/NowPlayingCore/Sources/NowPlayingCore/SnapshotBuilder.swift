@@ -10,15 +10,17 @@ public struct MusicReading: Equatable, Sendable {
     public var album: String
     public var duration: TimeInterval?
     public var position: TimeInterval?
+    public var rating: Rating
 
     public init(state: State, title: String, artist: String, album: String,
-                duration: TimeInterval? = nil, position: TimeInterval? = nil) {
+                duration: TimeInterval? = nil, position: TimeInterval? = nil, rating: Rating = .none) {
         self.state = state
         self.title = title
         self.artist = artist
         self.album = album
         self.duration = duration
         self.position = position
+        self.rating = rating
     }
 }
 
@@ -74,7 +76,8 @@ public enum SnapshotBuilder {
             current: current,
             upcoming: upcomingSong(after: music, in: queue, artworkFile: upcomingArtworkFile),
             updatedAt: now,
-            expectedEndAt: expectedEndAt
+            expectedEndAt: expectedEndAt,
+            rating: music.rating
         )
     }
 

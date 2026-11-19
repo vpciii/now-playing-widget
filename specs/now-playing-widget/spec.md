@@ -32,11 +32,19 @@ Notification Center, and kept current without interaction.
    widget, without bringing Music forward.
 6. The artwork is the visual centre of the widget, with the song
    information laid over it.
+7. The owner can mark the current song as *liked* from the widget, and
+   see whether it is.
 
 ## Non-goals
 
-- Controls beyond skip, back and play/pause: no volume, scrubbing,
-  shuffle or repeat.
+- Controls beyond skip, back, play/pause and like: no volume,
+  scrubbing, shuffle or repeat.
+- A dislike control. It was specified and built, then withdrawn on
+  2026-11-19: Music discards a dislike set over AppleScript for streamed
+  songs, and reports its own dislike command as disabled (see Open
+  questions).
+- Rating anything other than the *current song* (not the upcoming song,
+  the album or the playlist).
 - Widget sizes other than large.
 - Players other than Apple's Music app (Spotify, browsers, podcasts).
 - Distribution to anyone else: no App Store, no notarized release.
@@ -101,6 +109,18 @@ Terms in *italics* are defined in `docs/glossary.md`.
   itself when the *current song* changes. (Added 2026-11-19 at the
   owner's request; hover is not available to widgets.)
 
+- **R-22 (MUST)** The widget has a like control. Pressing it when the
+  *current song* is not *liked* makes it *liked* in Music; pressing it
+  when it is *liked* removes that. (R-22 to R-25 added 2026-11-19 at
+  the owner's request.)
+- **R-23** *Withdrawn 2026-11-19* (dislike control; see Non-goals). The
+  id is not reused.
+- **R-24** *Withdrawn 2026-11-19* (liked and disliked mutually
+  exclusive; no longer applies).
+- **R-25 (MUST)** The like control's icon shows the state Music reports
+  for the *current song* (filled when *liked*). After a press the widget
+  shows what Music reports, not what was asked for.
+
 ## Success criteria
 
 - **SC-1** — The widget configuration declares exactly one supported
@@ -150,7 +170,32 @@ Terms in *italics* are defined in `docs/glossary.md`.
   normal layout; a change of *current song* closes it; a "not playing"
   layout never has it. (R-21)
 
+- **SC-19** — The like control issues "like" when the snapshot's song
+  is not *liked* and "remove like" when it is; each press issues exactly
+  one command. (R-22)
+- *SC-20* — Withdrawn 2026-11-19 with R-23. The id is not reused.
+- *SC-21* — Withdrawn 2026-11-19 with R-24. The id is not reused.
+- **SC-22** — The rating in the *snapshot* is the one in the reading
+  from Music; the like icon is filled only when it says *liked*; the
+  like commands are marked as needing a fresh reading afterwards. (R-25)
+
 ## Open questions
+
+- [x] Does Music accept like and dislike over AppleScript for a streamed
+      song that is not in the library? **Like: yes (2026-11-19).** It is
+      accepted and reported back about 2.5 s later; removing it is
+      reported at once. **Dislike: no, for the streamed song tested.**
+      Music returned no error but never reported `disliked` as true in 9
+      seconds; the owner thinks a station was playing. Untested for
+      library songs and album playback. R-23 is therefore not met for
+      streamed songs. **Decided 2026-11-19: the owner chose to remove
+      the dislike control** (R-23 and R-24 withdrawn).
+      **Private route checked 2026-11-19, read-only:** Music advertises
+      `LikeTrack` and `DislikeTrack` to MediaRemote as `enabled = 0` for
+      the playback tested, titled "Play More Like This" and "Play Less
+      Like This" (station feedback, not Favorite and Suggest Less). A
+      disabled command was not sent, so that route is not adopted and
+      ADR-0001 is unchanged.
 
 - [x] Can a widget button command Music directly from the sandboxed
       widget extension, or must it relay through the *host app*?
@@ -172,6 +217,12 @@ Terms in *italics* are defined in `docs/glossary.md`.
 ## Out of scope (for now)
 
 - Medium or extra-large layouts.
+- A flyout of recently played stations, or Top Picks (raised and set
+  aside by the owner, 2026-11-19). A widget cannot draw outside its box,
+  and Music exposes neither list locally. The supported way is MusicKit,
+  which needs the app signed under an Apple Developer Program team, a
+  permission prompt and access to Apple's music API. It would be its own
+  spec and ADR.
 - A second upcoming song or a short queue list.
 
 ## Traceability
@@ -198,3 +249,7 @@ Built up during implementation; complete before `Implemented`.
 | SC-16 | R-19 | `NowPlayingCoreTests/WidgetLayoutTests.swift::notPlayingHasNoControls` |
 | SC-17 | R-20 | `NowPlayingCoreTests/WidgetLayoutTests.swift::oneCommandPerPress`, `…::playPauseIcon` |
 | SC-18 | R-21 | `NowPlayingCoreTests/WidgetLayoutTests.swift::detailsCarryEverything`, `…::detailsWithoutUpcoming`, `…::togglingTwiceCloses`, `…::trackChangeCloses`, `…::notPlayingHasNoDetails` |
+| SC-19 | R-22 | `NowPlayingCoreTests/RatingTests.swift::likeControl` |
+| SC-20 | R-23 | withdrawn |
+| SC-21 | R-24 | withdrawn |
+| SC-22 | R-25 | `NowPlayingCoreTests/RatingTests.swift::iconsFollowMusic`, `…::ratingCommandsNeedFreshReading` |

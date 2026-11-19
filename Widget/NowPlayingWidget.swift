@@ -214,19 +214,34 @@ struct NowPlayingView: View {
     private func overlayContent(_ overlay: WidgetLayout.Overlay) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Spacer(minLength: 0)
-            // Clicking the song text opens or closes the details view (R-21).
-            Button(intent: ToggleDetailsIntent()) {
-                Group {
-                    if let details = overlay.details {
-                        detailsText(details, status: overlay.statusLabel)
-                    } else {
-                        summaryText(overlay)
+            HStack(alignment: .bottom, spacing: 10) {
+                // Clicking the song text opens or closes the details view (R-21).
+                Button(intent: ToggleDetailsIntent()) {
+                    Group {
+                        if let details = overlay.details {
+                            detailsText(details, status: overlay.statusLabel)
+                        } else {
+                            summaryText(overlay)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
+                // Like, filled when Music reports the song as liked (R-25).
+                HStack(spacing: 12) {
+                    ForEach(overlay.ratingControls, id: \.command.rawValue) { control in
+                        Button(intent: PlayerCommandIntent(control.command)) {
+                            Image(systemName: control.systemImage)
+                                .font(.body)
+                                .frame(width: 24, height: 24)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
 
             HStack(alignment: .center, spacing: 8) {
                 if let file = overlay.upNextArtworkFile, let image = Self.image(named: file) {

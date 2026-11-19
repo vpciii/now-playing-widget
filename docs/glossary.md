@@ -16,3 +16,6 @@
 - **Details view** — the widget's expanded state, opened by clicking the
   song text: full title, artist and album of the current and upcoming
   songs.
+- **Liked** — the song is a Favorite in Music (`favorited` in Music's
+  scripting interface).
+- **Rating** — whether the current song is liked or not.

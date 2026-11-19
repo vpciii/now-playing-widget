@@ -170,6 +170,11 @@ final class NowPlayingCoordinator {
         } catch {
             Log.commands.error("command failed: \(String(describing: error), privacy: .public)")
         }
+        // Music announces nothing when a rating changes, so read it back and
+        // show what Music now reports, whether or not the command worked.
+        for delay in command.freshReadingDelays {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in self?.refresh() }
+        }
     }
 
     private func publish(_ snapshot: Snapshot) {
@@ -181,7 +186,8 @@ final class NowPlayingCoordinator {
                 "\(snapshot.current?.title ?? "-", privacy: .public)" \
                 artwork=\(snapshot.current?.artworkFile != nil, privacy: .public) \
                 upcoming="\(snapshot.upcoming?.title ?? "unavailable", privacy: .public)" \
-                upcomingArtwork=\(snapshot.upcoming?.artworkFile != nil, privacy: .public)
+                upcomingArtwork=\(snapshot.upcoming?.artworkFile != nil, privacy: .public) \
+                rating=\(snapshot.rating.rawValue, privacy: .public)
                 """)
         } catch {
             Log.widget.error("could not write snapshot: \(error.localizedDescription, privacy: .public)")
