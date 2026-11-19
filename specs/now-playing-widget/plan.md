@@ -1,0 +1,166 @@
+# Plan: Now Playing desktop widget
+
+- **Status:** Approved
+- **Date:** 2026-11-19
+- **Author:** Claude (draft); approved by the owner 2026-11-19
+- **Spec:** ./spec.md
+- **Related ADRs:** ADR-0001
+
+> This plan freezes with its spec: editable while `Draft` / `Under
+> review` / `Approved`, and a historical record once the PR that marks
+> the spec `Implemented` merges. A contradiction found later goes to a
+> test, a new spec, or an ADR — not back into this file.
+
+## Approach
+
+Three pieces. A **core Swift package** holds everything that can be
+tested without Music or WidgetKit: the *snapshot* model, the builder
+that merges *supported route* and *queue source* results, the parsers,
+the artwork URL allowlist, and the layout model the widget view renders
+from. A **host app** (background agent, not sandboxed) does all the
+talking to the outside: it listens for Music's
+`com.apple.Music.playerInfo` notification, reads the *current song* over
+AppleScript, runs the *queue source* script through `/usr/bin/swift`,
+writes the *snapshot* and artwork into a shared App Group container, and
+asks WidgetKit to reload. A **widget extension** (sandboxed) only reads
+the latest *snapshot* and draws it.
+
+Every edge of the host app is behind a protocol (`MusicReading`,
+`QueueSource`, `MusicCommanding`, `ArtworkFetching`) so tests substitute
+fakes and the private route (ADR-0001) is one replaceable component.
+
+Controls are App Intents on widget buttons. The intent does not talk to
+Music itself: it posts a distributed notification naming the command,
+and the host app turns that into one AppleScript command (`next track`,
+`back track`, `playpause`). This keeps Music access and its Automation
+consent in a single process. The first task verifies this relay works
+from the sandboxed extension; if it does not, the fallback is an Apple
+Events entitlement on the extension.
+
+## Components touched
+
+All new.
+
+- `project.yml` — XcodeGen definition of the app and widget targets. The
+  `.xcodeproj` is generated and git-ignored, so the project structure
+  lives in one reviewable file.
+- `Packages/NowPlayingCore/` — Swift package: `Snapshot`,
+  `SnapshotBuilder`, `QueueOutputParser`, `ArtworkURLPolicy`,
+  `WidgetLayout`, `PlayerCommand`, and its tests.
+- `App/` — host app: `MusicObserver` (notification), `AppleScriptMusic`
+  (`MusicReading` + `MusicCommanding`), `SwiftScriptQueueSource`,
+  `ArtworkFetcher`, `SnapshotStore`, `CommandRelay`, login item
+  registration, menu bar item with Quit.
+- `App/Resources/queue.swift` — the *queue source* script from the
+  spike, emitting JSON on stdout.
+- `Widget/` — widget extension: timeline provider, the overlay view,
+  the three control intents.
+- `docs/architecture.md` — the shape above, written with the first task.
+- `scripts/check-traceability.sh` — fails if a spec criterion id is not
+  cited by a test.
+
+## Data model changes
+
+No database. One JSON file plus image files in the App Group container,
+overwritten on every change:
+
+```
+snapshot.json
+{
+  "state": "playing" | "paused" | "notPlaying",
+  "current":  { "title", "artist", "album", "artworkFile"? } | null,
+  "upcoming": { "title", "artist", "album", "artworkFile"? } | absent (unavailable),
+  "updatedAt": ISO-8601,
+  "expectedEndAt": ISO-8601 | null
+}
+current-artwork.jpg, upcoming-artwork.jpg   (downscaled to 600 px)
+```
+
+Sensitivity: listening metadata for the song playing now, kept only on
+this Mac, replaced on each track change, removed by deleting the app's
+group container. No history is kept.
+
+Staleness (spec goal 4): the timeline carries a second entry at
+`expectedEndAt` plus a margin that flips the widget to "not playing", so
+a crashed or quit host app cannot leave a finished song looking live.
+The host app also writes "not playing" when it quits.
+
+### Decisions
+
+- *2026-11-19* — **Shared folder instead of an App Group.** The build
+  failed with "requires a provisioning profile" for the App Group
+  entitlement, and this Mac has no developer team. The *snapshot* now
+  lives in `~/Library/Application Support/NowPlaying/`, which the
+  sandboxed widget reads through a read-only sandbox exception. With
+  that change the app builds and runs ad hoc-signed, so plan risk 1 (no
+  signing identity) no longer blocks anything. Undo: switch
+  `SharedContainer` back to an App Group once a team exists.
+
+## API changes
+
+None external. Internal contracts:
+
+- *Queue source* script: exit 0 with
+  `{"items":[{"title","artist","album","artworkURL"}...]}` where item 0
+  is the *current song*; anything else (non-zero exit, timeout of 3 s,
+  malformed JSON, fewer than two items) means "unavailable".
+- Command relay: distributed notifications
+  `<bundle-id>.command.next`, `.back`, `.playpause`, no payload.
+
+## Alternatives considered
+
+- **Hand-written `.xcodeproj`** — no extra tool, but an unreviewable
+  generated-looking file that is easy to corrupt. XcodeGen is already
+  installed here, is a build-time tool only, and is not shipped.
+- **Controls sending Apple Events straight from the widget** — one hop
+  fewer, but puts an Apple Events sandbox exception and a second
+  Automation consent on the extension. Kept as the fallback.
+- **Polling Music on a timer** — simpler than notifications, but wastes
+  energy and is slower to react. The notification fired reliably in the
+  spike.
+- **Keeping the queue script running as a daemon** — avoids the 0.2 s
+  launch per track change, but adds lifecycle management for no visible
+  gain.
+
+## Risks
+
+| Risk | Likelihood | Impact | Mitigation |
+| ---- | ---------- | ------ | ---------- |
+| No code-signing identity on this Mac (0 found). App Groups and widget loading may not work with ad hoc signing. | High | Blocks the first task | Owner signs in to Xcode with an Apple ID (free) so it creates a development certificate; verified at the start of task 1. |
+| WidgetKit throttles reloads; widget lags track changes (R-11). | Medium | Medium | Measure in task 2; report numbers to the owner before continuing. |
+| Apple closes the interpreter route or renames private classes (ADR-0001). | Medium | Upcoming song disappears | Spec'd fallback to "unavailable" (R-5); single component to replace. |
+| Sandboxed widget cannot post the relay notification. | Low | Controls need the fallback path | Verified in task 1 before any control UI is built. |
+| Queue is wrong under shuffle, local playlists or radio. | Unknown | Wrong upcoming song | Manual check matrix in task 3; results recorded against the spec's open question. |
+| Automation consent denied or reset. | Low | No data at all | Widget shows "not playing"; menu bar item shows a "needs permission" hint. |
+
+## Rollout
+
+Personal install on one Mac, built from Xcode, no flags. Five tasks,
+each a small PR to `main`; the widget is usable after task 2.
+
+Undo: remove the widget from the desktop, choose Quit from the menu bar
+item, delete the app. That also removes the login item. Automation
+consent can be revoked under System Settings > Privacy & Security >
+Automation. Nothing here is irreversible.
+
+## Observability
+
+`os.Logger` in the host app, one subsystem, categories `music`, `queue`,
+`widget`, `commands`: each track change, each *queue source* result or
+failure reason, each reload request and each relayed command. Viewable
+in Console. No metrics or remote reporting (R-10).
+
+## Test strategy
+
+- **Unit (core package, `swift test`)** — every success criterion except
+  SC-9: snapshot building, fallback on each failure mode, no
+  playlist-order input, state distinctions, layout model (overlay,
+  scrim, control visibility, play/pause icon), command mapping with a
+  counting fake, artwork URL allowlist. Each test cites its `SC-` id.
+- **Integration (app target)** — SC-9: Info.plist agent flag, login item
+  registration, Quit command.
+- **Manual, recorded in the PR** — the widget appears in the gallery and
+  on the desktop; refresh latency; the shuffle / local / radio matrix;
+  each control against real Music.
+- `scripts/check-traceability.sh` runs locally now and in CI once the
+  repository has a remote.
