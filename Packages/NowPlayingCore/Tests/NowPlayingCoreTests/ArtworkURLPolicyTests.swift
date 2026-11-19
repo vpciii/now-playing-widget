@@ -32,3 +32,32 @@ func rejectsEverythingElse(url: String) {
 func rejectsMissing() {
     #expect(ArtworkURLPolicy.approve(nil as String?) == nil)
 }
+
+private let zelda = MusicReading(state: .playing, title: "Zelda's Lullaby", artist: "VOCES8", album: "Nightfall")
+private let zeldaURL = "https://is1-ssl.mzstatic.com/image/thumb/Music/nightfall.jpg/800x800bb.jpg"
+
+@Test("Regression: the current artwork comes from the queue's URL for that song, not from AppleScript")
+func currentArtworkPrefersQueueURL() {
+    // 2026-11-19: after a track change AppleScript returned the previous
+    // song's artwork, so the widget showed the right title on the wrong cover.
+    let queue = QueueResult.items([
+        QueueItem(title: "Zelda's Lullaby", artist: "VOCES8", album: "Nightfall", artworkURL: zeldaURL),
+        QueueItem(title: "Next", artist: "", album: ""),
+    ])
+    #expect(CurrentArtworkSource.choose(music: zelda, queue: queue) == .download(ArtworkURLPolicy.approve(zeldaURL)!))
+}
+
+@Test("The current artwork falls back to AppleScript only when the queue has no usable URL for this song",
+      arguments: [
+        QueueResult.failed(reason: "Operation not permitted"),
+        QueueResult.items([]),
+        // The queue is for a different song (readings straddle a track change).
+        QueueResult.items([QueueItem(title: "Overture March", artist: "", album: "", artworkURL: zeldaURL)]),
+        // No URL, as for a local file.
+        QueueResult.items([QueueItem(title: "Zelda's Lullaby", artist: "", album: "")]),
+        // A URL the policy rejects.
+        QueueResult.items([QueueItem(title: "Zelda's Lullaby", artist: "", album: "", artworkURL: "https://example.com/a.jpg")]),
+      ])
+func currentArtworkFallsBack(queue: QueueResult) {
+    #expect(CurrentArtworkSource.choose(music: zelda, queue: queue) == .appleScript)
+}

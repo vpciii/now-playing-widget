@@ -25,11 +25,17 @@ Music.app ──notification / AppleScript──▶ Host app ──writes──�
   reload, and carries out the widget's commands. It never launches Music.
   `SwiftScriptQueueSource` pipes the bundled `queue-source.swiftscript`
   into `/usr/bin/swift` to get the *upcoming song* (ADR-0001), and
-  `ArtworkFetcher` downloads artwork from allowlisted URLs only.
+  `ArtworkFetcher` downloads artwork from allowlisted URLs only. The
+  *current song*'s artwork comes from the queue's URL for that song;
+  AppleScript artwork is the fallback, because just after a track change
+  it can still be the previous song's (`CurrentArtworkSource`).
 - **`Widget/`** — the widget extension (`local.nowplaying.app.widget`).
   Sandboxed. Reads the latest *snapshot* and draws its `WidgetLayout`:
   artwork filling the widget, with the song text and controls overlaid on
-  a scrim. Large size only; macOS 15 or later.
+  a scrim. Large size only; macOS 15 or later. Clicking the song text
+  toggles the *details view*; which song it is open for is kept in the
+  extension's own `UserDefaults` (`DetailsStore`), so the host app is not
+  involved and a track change closes it.
 
 ## Boundaries and stores
 

@@ -24,6 +24,23 @@ public struct WidgetLayout: Equatable, Sendable {
         /// The darkening layer under the text and controls (spec R-15).
         public var showsScrim: Bool
         public var controls: [Control]
+        /// Present when the details view is open (spec R-21).
+        public var details: Details?
+    }
+
+    /// The details view: everything about both songs, never cut short.
+    public struct Details: Equatable, Sendable {
+        public var current: SongDetails
+        /// nil when the upcoming song is unavailable.
+        public var upcoming: SongDetails?
+        /// nil means no line limit; the view applies exactly this.
+        public var lineLimit: Int?
+    }
+
+    public struct SongDetails: Equatable, Sendable {
+        public var title: String
+        public var artist: String
+        public var album: String
     }
 
     public struct Control: Equatable, Sendable {
@@ -38,7 +55,7 @@ public struct WidgetLayout: Equatable, Sendable {
     /// nil in the "not playing" state: no song text and no controls.
     public var overlay: Overlay?
 
-    public init(snapshot: Snapshot) {
+    public init(snapshot: Snapshot, detailsExpanded: Bool = false) {
         guard snapshot.state != .notPlaying, let song = snapshot.current else {
             background = .placeholder
             overlay = nil
@@ -59,8 +76,35 @@ public struct WidgetLayout: Equatable, Sendable {
                 // The icon shows what a press will do.
                 Control(command: .playpause, systemImage: snapshot.state == .playing ? "pause.fill" : "play.fill"),
                 Control(command: .next, systemImage: "forward.fill"),
-            ]
+            ],
+            details: detailsExpanded
+                ? Details(
+                    current: SongDetails(title: song.title, artist: song.artist, album: song.album),
+                    upcoming: snapshot.upcoming.map { SongDetails(title: $0.title, artist: $0.artist, album: $0.album) },
+                    lineLimit: nil)
+                : nil
         )
+    }
+}
+
+/// Whether the details view is open. The widget remembers which song it was
+/// opened for, so it closes by itself when the current song changes.
+public enum DetailsState {
+    /// Identifies a song for this purpose.
+    public static func key(for snapshot: Snapshot?) -> String? {
+        guard let snapshot, snapshot.state != .notPlaying, let song = snapshot.current else { return nil }
+        return [song.title, song.artist, song.album].joined(separator: "\u{1F}")
+    }
+
+    public static func isExpanded(storedKey: String?, snapshot: Snapshot?) -> Bool {
+        guard let storedKey, let current = key(for: snapshot) else { return false }
+        return storedKey == current
+    }
+
+    /// The key to store after a click on the song text: open for the current
+    /// song, or nil to close.
+    public static func toggled(storedKey: String?, snapshot: Snapshot?) -> String? {
+        isExpanded(storedKey: storedKey, snapshot: snapshot) ? nil : key(for: snapshot)
     }
 }
 

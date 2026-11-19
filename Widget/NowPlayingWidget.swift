@@ -14,7 +14,7 @@ struct NowPlayingWidgetBundle: WidgetBundle {
 struct NowPlayingWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: WidgetSupport.widgetKind, provider: SnapshotProvider()) { entry in
-            NowPlayingView(layout: WidgetLayout(snapshot: entry.snapshot))
+            NowPlayingView(layout: WidgetLayout(snapshot: entry.snapshot, detailsExpanded: entry.detailsExpanded))
                 .containerBackground(for: .widget) { Color.black }
                 .widgetURL(URL(string: "nowplaying://open-music"))
         }
@@ -30,11 +30,46 @@ struct NowPlayingWidget: Widget {
 struct SnapshotEntry: TimelineEntry {
     let date: Date
     let snapshot: Snapshot
+    var detailsExpanded = false
+
+    init(_ entry: TimelinePlan.Entry) {
+        date = entry.date
+        snapshot = entry.snapshot
+        detailsExpanded = DetailsStore.isExpanded(for: entry.snapshot)
+    }
+}
+
+/// Remembers, inside the widget extension, which song the details view was
+/// opened for. WidgetKit reloads the timeline after an intent runs, so a
+/// click shows up without involving the host app.
+enum DetailsStore {
+    private static let key = "detailsExpandedForSong"
+
+    static func isExpanded(for snapshot: Snapshot?) -> Bool {
+        DetailsState.isExpanded(storedKey: UserDefaults.standard.string(forKey: key), snapshot: snapshot)
+    }
+
+    static func toggle() {
+        let defaults = UserDefaults.standard
+        let next = DetailsState.toggled(storedKey: defaults.string(forKey: key),
+                                        snapshot: SharedContainer.readSnapshot())
+        defaults.set(next, forKey: key)
+    }
+}
+
+struct ToggleDetailsIntent: AppIntent {
+    static var title: LocalizedStringResource = "Show Song Details"
+    static var isDiscoverable = false
+
+    func perform() async throws -> some IntentResult {
+        DetailsStore.toggle()
+        return .result()
+    }
 }
 
 struct SnapshotProvider: TimelineProvider {
     func placeholder(in context: Context) -> SnapshotEntry {
-        SnapshotEntry(date: Date(), snapshot: .notPlaying(at: Date()))
+        SnapshotEntry(TimelinePlan.Entry(date: Date(), snapshot: .notPlaying(at: Date())))
     }
 
     func getSnapshot(in context: Context, completion: @escaping (SnapshotEntry) -> Void) {
@@ -47,13 +82,11 @@ struct SnapshotProvider: TimelineProvider {
             timeline requested: \(entries[0].snapshot.state.rawValue, privacy: .public) \
             "\(entries[0].snapshot.current?.title ?? "-", privacy: .public)"
             """)
-        completion(Timeline(entries: entries.map { SnapshotEntry(date: $0.date, snapshot: $0.snapshot) },
-                            policy: .never))
+        completion(Timeline(entries: entries.map(SnapshotEntry.init), policy: .never))
     }
 
     private func currentEntry() -> SnapshotEntry {
-        let entry = TimelinePlan.entries(for: SharedContainer.readSnapshot(), now: Date())[0]
-        return SnapshotEntry(date: entry.date, snapshot: entry.snapshot)
+        SnapshotEntry(TimelinePlan.entries(for: SharedContainer.readSnapshot(), now: Date())[0])
     }
 }
 
@@ -136,7 +169,10 @@ struct NowPlayingView: View {
     /// Darkens the lower part of the artwork so light text stays readable on
     /// any cover (spec R-15).
     private var scrim: some View {
-        if isMuted {
+        if layout.overlay?.details != nil {
+            // The details view covers most of the widget with text.
+            Self.gradient([(0, 0, isMuted ? 0.9 : 0.72), (1, 0, isMuted ? 0.97 : 0.9)])
+        } else if isMuted {
             // The wash lifts every dark tone, so start from much darker: veil
             // the whole cover and put a near-solid band behind the text.
             Self.gradient([(0, 0, 0.35), (0.38, 0, 0.45), (0.58, 0, 0.92), (1, 0, 0.97)])
@@ -176,22 +212,36 @@ struct NowPlayingView: View {
     }
 
     private func overlayContent(_ overlay: WidgetLayout.Overlay) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 8) {
             Spacer(minLength: 0)
-            if let status = overlay.statusLabel {
-                Text(status.uppercased()).font(.caption2.weight(.semibold)).opacity(0.75)
+            // Clicking the song text opens or closes the details view (R-21).
+            Button(intent: ToggleDetailsIntent()) {
+                Group {
+                    if let details = overlay.details {
+                        detailsText(details, status: overlay.statusLabel)
+                    } else {
+                        summaryText(overlay)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
             }
-            Text(overlay.title).font(.title3.weight(.bold)).lineLimit(2)
-            Text(overlay.artist).font(.subheadline).lineLimit(1).opacity(0.9)
+            .buttonStyle(.plain)
 
             HStack(alignment: .center, spacing: 8) {
                 if let file = overlay.upNextArtworkFile, let image = Self.image(named: file) {
                     Image(nsImage: image).resizable().widgetAccentedRenderingMode(.fullColor)
                         .frame(width: 28, height: 28).clipShape(RoundedRectangle(cornerRadius: 4))
                 }
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("UP NEXT").font(.caption2.weight(.semibold)).opacity(0.7)
-                    Text(upNextLine(overlay)).font(.caption).lineLimit(1)
+                if overlay.details == nil {
+                    Button(intent: ToggleDetailsIntent()) {
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("UP NEXT").font(.caption2.weight(.semibold)).opacity(0.7)
+                            Text(upNextLine(overlay)).font(.caption).lineLimit(1)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
                 Spacer(minLength: 8)
                 HStack(spacing: 18) {
@@ -206,12 +256,52 @@ struct NowPlayingView: View {
                     }
                 }
             }
-            .padding(.top, 8)
         }
         // A fixed light colour: it never varies with the artwork (spec R-15).
         .foregroundStyle(.white)
         .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+    }
+
+    private func summaryText(_ overlay: WidgetLayout.Overlay) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            if let status = overlay.statusLabel {
+                Text(status.uppercased()).font(.caption2.weight(.semibold)).opacity(0.75)
+            }
+            Text(overlay.title).font(.title3.weight(.bold)).lineLimit(2)
+            Text(overlay.artist).font(.subheadline).lineLimit(1).opacity(0.9)
+        }
+    }
+
+    /// Both songs in full. `lineLimit` comes from the layout (nil: unlimited);
+    /// text shrinks a little before anything would be clipped by the widget.
+    private func detailsText(_ details: WidgetLayout.Details, status: String?) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            songDetails(heading: status.map { "Now playing · \($0)" } ?? "Now playing", details.current)
+            if let upcoming = details.upcoming {
+                songDetails(heading: "Up next", upcoming)
+            } else {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("UP NEXT").font(.caption2.weight(.semibold)).opacity(0.7)
+                    Text(WidgetLayout.upNextUnavailableText).font(.subheadline)
+                }
+            }
+        }
+        .lineLimit(details.lineLimit)
+        .minimumScaleFactor(0.7)
+        .multilineTextAlignment(.leading)
+    }
+
+    private func songDetails(heading: String, _ song: WidgetLayout.SongDetails) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(heading.uppercased()).font(.caption2.weight(.semibold)).opacity(0.7)
+            Text(song.title).font(.subheadline.weight(.bold))
+            Text(song.artist).font(.caption).opacity(0.9)
+            if !song.album.isEmpty {
+                Text(song.album).font(.caption).opacity(0.75)
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private func upNextLine(_ overlay: WidgetLayout.Overlay) -> String {

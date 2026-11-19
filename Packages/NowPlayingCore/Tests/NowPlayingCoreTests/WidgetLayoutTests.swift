@@ -87,3 +87,59 @@ func unknownNotificationIgnored() throws {
     #expect(handled == nil)
     #expect(commander.sent.isEmpty)
 }
+
+@Test("SC-18: the details view carries both songs in full, with no line limit")
+func detailsCarryEverything() {
+    let longTitle = "Kakariko Village [From \"The Legend of Zelda\"] (Arr. Koseki for Guitar)"
+    let next = Song(title: "Fields of Dusk (Orchestral Version)", artist: "Tatran",
+                    album: "Star Wars Jedi: Survivor (Original Video Game Soundtrack)")
+    var playing = snapshot(.playing, upcoming: next)
+    playing.current?.title = longTitle
+
+    let details = WidgetLayout(snapshot: playing, detailsExpanded: true).overlay?.details
+    #expect(details?.current == .init(title: longTitle, artist: "LPO", album: "Greatest"))
+    #expect(details?.upcoming == .init(title: next.title, artist: next.artist, album: next.album))
+    #expect(details?.lineLimit == nil)
+    #expect(WidgetLayout(snapshot: playing).overlay?.details == nil)
+}
+
+@Test("SC-18: with no upcoming song the details view still opens and says so")
+func detailsWithoutUpcoming() {
+    let layout = WidgetLayout(snapshot: snapshot(.playing), detailsExpanded: true)
+    #expect(layout.overlay?.details?.current.title == "Tetris")
+    #expect(layout.overlay?.details?.upcoming == nil)
+    #expect(layout.overlay?.upNextTitle == WidgetLayout.upNextUnavailableText)
+}
+
+@Test("SC-18: clicking twice returns to the normal layout")
+func togglingTwiceCloses() {
+    let playing = snapshot(.playing)
+    let opened = DetailsState.toggled(storedKey: nil, snapshot: playing)
+    #expect(DetailsState.isExpanded(storedKey: opened, snapshot: playing))
+    let closed = DetailsState.toggled(storedKey: opened, snapshot: playing)
+    #expect(closed == nil)
+    #expect(!DetailsState.isExpanded(storedKey: closed, snapshot: playing))
+}
+
+@Test("SC-18: a change of current song closes the details view")
+func trackChangeCloses() {
+    let first = snapshot(.playing)
+    var second = first
+    second.current?.title = "Gusty Garden"
+    let opened = DetailsState.toggled(storedKey: nil, snapshot: first)
+    #expect(DetailsState.isExpanded(storedKey: opened, snapshot: first))
+    #expect(!DetailsState.isExpanded(storedKey: opened, snapshot: second))
+    // Pausing the same song keeps it open.
+    var paused = first
+    paused.state = .paused
+    #expect(DetailsState.isExpanded(storedKey: opened, snapshot: paused))
+}
+
+@Test("SC-18: a not-playing layout never has the details view")
+func notPlayingHasNoDetails() {
+    let stopped = snapshot(.notPlaying)
+    #expect(WidgetLayout(snapshot: stopped, detailsExpanded: true).overlay == nil)
+    #expect(DetailsState.toggled(storedKey: nil, snapshot: stopped) == nil)
+    #expect(!DetailsState.isExpanded(storedKey: "anything", snapshot: stopped))
+    #expect(!DetailsState.isExpanded(storedKey: "anything", snapshot: nil))
+}

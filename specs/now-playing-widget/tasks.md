@@ -99,3 +99,20 @@ and play/pause controls through the relay.
 - [x] `scripts/check-traceability.sh` passes with every SC covered
 - [x] README with build, install and undo steps
 - [ ] Spec open questions resolved; spec marked `Implemented` (open: queue correctness under shuffle, local playlists and radio)
+
+---
+
+## Task 6 — Details view on click `[~]`
+
+- **Depends on:** Task 4
+- **PR:** —
+
+**What:** Clicking the song text opens the *details view* with both songs
+in full; clicking again or a track change closes it (R-21, added
+2026-11-19).
+
+**Acceptance criteria:**
+- [x] Tests cite SC-18
+- [x] Installed build runs with no widget errors logged
+- [ ] Owner confirms on the desktop: opens on click, closes on click and
+      on track change, long titles are not cut off

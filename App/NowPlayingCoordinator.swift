@@ -55,33 +55,24 @@ final class NowPlayingCoordinator {
             return
         }
 
-        // Artwork from the supported route when Music has it ready.
-        var artworkFile: String?
-        if let data = music.currentArtwork() {
-            artworkFile = ArtworkWriter.write(data, as: ArtworkFile.current)
-            downloaded[ArtworkFile.current] = nil
-        }
-
         queueSource.fetch { [weak self] queue in
             guard let self, self.generation == current else { return }
             if case .failed(let reason) = queue {
                 Log.queue.error("queue source failed: \(reason, privacy: .public)")
             }
-            self.publish(music: reading, queue: queue, now: now, currentArtworkFile: artworkFile, generation: current)
+            self.publish(music: reading, queue: queue, now: now, generation: current)
         }
     }
 
     /// Publishes once any artwork downloads are in place, or straight away
     /// when there are none. Slow downloads publish without the images first
     /// and once more when they have all arrived.
-    private func publish(music: MusicReading, queue: QueueResult, now: Date,
-                         currentArtworkFile: String?, generation current: Int) {
+    private func publish(music: MusicReading, queue: QueueResult, now: Date, generation current: Int) {
         var files: [String: String] = [:]
-        if let currentArtworkFile { files[ArtworkFile.current] = currentArtworkFile }
         var wanted: [(file: String, url: ApprovedArtworkURL)] = []
 
-        func want(_ file: String, from urlString: String?) {
-            guard let approved = ArtworkURLPolicy.approve(urlString) else {
+        func want(_ file: String, from approved: ApprovedArtworkURL?) {
+            guard let approved else {
                 downloaded[file] = nil
                 ArtworkWriter.remove(file)
                 return
@@ -93,22 +84,42 @@ final class NowPlayingCoordinator {
             }
         }
 
-        // Streamed songs often have no artwork over AppleScript yet; the queue
-        // source's first item is the same song and carries its artwork URL.
-        if currentArtworkFile == nil {
-            var currentURL: String?
-            if case .items(let items) = queue, let first = items.first, first.title == music.title {
-                currentURL = first.artworkURL
-            }
-            want(ArtworkFile.current, from: currentURL)
-        }
-        want(ArtworkFile.upcoming, from: SnapshotBuilder.upcomingItem(after: music, in: queue)?.artworkURL)
-
         func snapshot() -> Snapshot {
             SnapshotBuilder.build(music: music, queue: queue, now: now,
                                   currentArtworkFile: files[ArtworkFile.current],
                                   upcomingArtworkFile: files[ArtworkFile.upcoming])
         }
+
+        switch CurrentArtworkSource.choose(music: music, queue: queue) {
+        case .download(let approved):
+            want(ArtworkFile.current, from: approved)
+        case .appleScript:
+            // No URL for this song (a local file, or the queue source failed).
+            // AppleScript can still be returning the previous song's artwork
+            // this soon after a track change, so read it again shortly.
+            downloaded[ArtworkFile.current] = nil
+            let first = self.music.currentArtwork()
+            if let first, ArtworkWriter.write(first, as: ArtworkFile.current) != nil {
+                files[ArtworkFile.current] = ArtworkFile.current
+            } else {
+                ArtworkWriter.remove(ArtworkFile.current)
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [weak self] in
+                guard let self, self.generation == current else { return }
+                let second = self.music.currentArtwork()
+                guard second != first else { return }
+                if let second, ArtworkWriter.write(second, as: ArtworkFile.current) != nil {
+                    files[ArtworkFile.current] = ArtworkFile.current
+                } else {
+                    files[ArtworkFile.current] = nil
+                    ArtworkWriter.remove(ArtworkFile.current)
+                }
+                Log.music.info("artwork changed on second read; republishing")
+                self.publish(snapshot())
+            }
+        }
+        want(ArtworkFile.upcoming,
+             from: ArtworkURLPolicy.approve(SnapshotBuilder.upcomingItem(after: music, in: queue)?.artworkURL))
 
         guard !wanted.isEmpty else {
             publish(snapshot())

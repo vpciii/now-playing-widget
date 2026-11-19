@@ -115,6 +115,23 @@ The host app also writes "not playing" when it quits.
   `App/Info.plist`, and login item registration and the Quit command
   are decided by `HostAppPolicy`, which the app only carries out.
 
+- *2026-11-19* — **Details view state lives in the widget extension.**
+  The toggle intent runs in the extension and WidgetKit reloads the
+  timeline after it, so the state is a `UserDefaults` value there rather
+  than a field in the *snapshot* relayed through the host app. It is
+  keyed to the *current song*, which is what closes it on a track
+  change.
+
+- *2026-11-19* — **Current artwork comes from the queue source's URL
+  first; AppleScript is the fallback.** This reverses the order in the
+  earlier entry above. Found on the desktop: after a track change the
+  widget showed the right title on the previous song's cover, because
+  AppleScript was still returning the old artwork when asked. The
+  queue's URL belongs to the song by construction. When there is no URL
+  (a local file, or the queue source failed) AppleScript is used and
+  read a second time 2.5 s later. Regression test:
+  `ArtworkURLPolicyTests::currentArtworkPrefersQueueURL`.
+
 ## API changes
 
 None external. Internal contracts:

@@ -13,3 +13,6 @@
   `com.apple.Music.playerInfo` distributed notification.
 - **Queue source** — the private MediaRemote query that returns the
   playback queue (ADR-0001).
+- **Details view** — the widget's expanded state, opened by clicking the
+  song text: full title, artist and album of the current and upcoming
+  songs.

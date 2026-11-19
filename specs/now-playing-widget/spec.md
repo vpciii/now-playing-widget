@@ -74,8 +74,8 @@ Terms in *italics* are defined in `docs/glossary.md`.
   (see Open questions).
 - **R-12 (SHOULD)** The widget shows the *upcoming song*'s artwork as a
   thumbnail when available.
-- **R-13 (SHOULD)** Clicking the widget outside its controls brings
-  Music to the front.
+- **R-13 (SHOULD)** Clicking the widget outside its controls and song
+  text brings Music to the front.
 - **R-14 (MUST)** The *current song* and *upcoming song* text and the
   controls are laid over the artwork, not beside it.
 - **R-15 (MUST)** Overlaid text and controls stay legible over any
@@ -93,6 +93,13 @@ Terms in *italics* are defined in `docs/glossary.md`.
 - **R-20 (MUST)** The widget has a play/pause control that toggles
   Music between playing and paused, and its icon reflects which of the
   two it will do.
+
+- **R-21 (MUST)** Clicking the song text opens the *details view*: the
+  full title, artist and album of the *current song* and of the
+  *upcoming song* (or the "up next unavailable" state), with no text cut
+  off by a line limit. Clicking it again closes it, and it closes by
+  itself when the *current song* changes. (Added 2026-11-19 at the
+  owner's request; hover is not available to widgets.)
 
 ## Success criteria
 
@@ -137,6 +144,12 @@ Terms in *italics* are defined in `docs/glossary.md`.
   "playpause" command to Music; a playing entry shows the pause icon
   and a paused entry shows the play icon. (R-20)
 
+- **SC-18** — With the *details view* open, the layout carries the full
+  title, artist and album of the *current song* and the *upcoming song*
+  and marks them as unlimited in length; toggling twice returns to the
+  normal layout; a change of *current song* closes it; a "not playing"
+  layout never has it. (R-21)
+
 ## Open questions
 
 - [x] Can a widget button command Music directly from the sandboxed
@@ -179,3 +192,4 @@ Built up during implementation; complete before `Implemented`.
 | SC-15 | R-18 | `NowPlayingCoreTests/WidgetLayoutTests.swift::controlsIndependentOfQueueSource` |
 | SC-16 | R-19 | `NowPlayingCoreTests/WidgetLayoutTests.swift::notPlayingHasNoControls` |
 | SC-17 | R-20 | `NowPlayingCoreTests/WidgetLayoutTests.swift::oneCommandPerPress`, `…::playPauseIcon` |
+| SC-18 | R-21 | `NowPlayingCoreTests/WidgetLayoutTests.swift::detailsCarryEverything`, `…::detailsWithoutUpcoming`, `…::togglingTwiceCloses`, `…::trackChangeCloses`, `…::notPlayingHasNoDetails` |

@@ -27,3 +27,22 @@ public enum ArtworkURLPolicy {
         return ApprovedArtworkURL(url: url)
     }
 }
+
+/// Where the current song's artwork should come from.
+public enum CurrentArtworkSource: Equatable, Sendable {
+    /// Download it from the URL the queue source reports for this song.
+    case download(ApprovedArtworkURL)
+    /// Ask Music over AppleScript. Only when there is no usable URL: at a
+    /// track change AppleScript can still return the previous song's artwork.
+    case appleScript
+
+    /// Prefers the queue source's URL, which belongs to the song by
+    /// construction, whenever the queue's first item is the current song.
+    public static func choose(music: MusicReading, queue: QueueResult) -> CurrentArtworkSource {
+        guard case .items(let items) = queue, let first = items.first, first.title == music.title,
+              let approved = ArtworkURLPolicy.approve(first.artworkURL) else {
+            return .appleScript
+        }
+        return .download(approved)
+    }
+}

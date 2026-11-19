@@ -9,6 +9,11 @@ public enum TimelinePlan {
     public struct Entry: Equatable, Sendable {
         public var date: Date
         public var snapshot: Snapshot
+
+        public init(date: Date, snapshot: Snapshot) {
+            self.date = date
+            self.snapshot = snapshot
+        }
     }
 
     /// The stored snapshot now, followed by a "not playing" entry once a
